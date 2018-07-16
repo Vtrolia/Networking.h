@@ -16,9 +16,9 @@ A simple library of functions to make network programming in C much easier, now 
 ## Functions:
 
 ### Connection make_connection( const char *domain, const char *port,  char *client_port):
--	Domain: a string that either holds the ip address or the domain name of the server you wish to connect to
--	Port: This is a string representing the port being used on the server that you wish to connect to
--	Client_port: another string, this time it represents the port YOU want to use on your local computer. If you are using this for a server application, pass in NULL.
+-	*Domain*: a string that either holds the ip address or the domain name of the server you wish to connect to
+-	*Port*: This is a string representing the port being used on the server that you wish to connect to
+-	*Client_port*: another string, this time it represents the port YOU want to use on your local computer. If you are using this for a server application, pass in NULL.
 
 This function will create a socket for you that is ready to be connected to a client or a server and passes you the information you need to connect back in a connection struct. If you want to make custom connecting to client and connecting to server functions, use this. If not, this function’s main purpose is to be used by the higher-level functions when they actually will connect to you to the computer you want or listen for a client to connect. It will create an IPv4 TCP connection.
 
