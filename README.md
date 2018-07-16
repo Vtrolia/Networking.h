@@ -50,7 +50,7 @@ This is a function to be used with testing or if you want to make self-signed ce
 
 
 ### Ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_file, 
-char *port):
+### char *port):
 -	*prikey_file*: This string can be either a relative or absolute path to the SSL private key you have either generated with the function above or on your own with the OpenSSL binary
 -	*cert_file*: This string is the relative or absolute path to the certificate (either self-signed or registered with a CA) that belongs to your program. Both of these are used with the new SSL connection to encrypt/decrypt the data, as well as help the client generate their own keys
 -	*port*: This is the port that you want to listen on
