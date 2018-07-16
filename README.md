@@ -38,7 +38,7 @@ In this function, we start a server and listen until a client attempts to connec
 This function loads up all of the errors, algorithms and libraries needed in order to start a working OpenSSL SSL/TLS server. You must call this function first before any of the other functions using SSL or else they will not work. Put this at the top of your program, or at least at the top of any of your networking functionality.
 
 ### Int secure_send(SSL *ssl, char *message, int size) &
- Int secure_recieve(SSL *ssl, char *buffer, int size):
+ ### Int secure_recieve(SSL *ssl, char *buffer, int size):
 -	*Ssl*: A pointer to the ssl enabled socket we are using for our connection
 -	*Message/buffer*: these are the pointers to the strings where our message comes from, and where it will be put into
 -	*Size*: the size of the message (in bytes)
