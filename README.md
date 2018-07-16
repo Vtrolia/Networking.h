@@ -1,6 +1,6 @@
-# Networking.h
+# Basic_Networking.h
 
-A simple library of functions to make network programming in C much easier, now with SSL/TLS Support with OpenSSL! Just make sure you have it installed, as I learned that lesson the hard way.
+A simple library of functions to make network programming in C much easier, but the more basic version without SSL/TLS support
 
 ## Structs:
 
@@ -10,8 +10,6 @@ A simple library of functions to make network programming in C much easier, now 
 ### Tuple: (int sockaddr, int dataaddr)
 -	This struct is used to keep track of both sockets being used by a server program. The sockaddr is the descriptor of the socket that is listening for new connections, and dataaddr is generated for each new accepted connection. The only time you will run into this struct is when you are running a server.
 
-### Ssl_tuple: (SSL *ssl_connection, SSL_CTX *ctx, int socket)
--	Our final struct is one designed for memory clearing once our server or client is ready to close. Ssl_connection is a pointer to the file descriptor of an encrypted OpenSSL connection, and ctx is a pointer to the current SSL context being used. Socket is the descriptor of data transfer socket.
 
 ## Functions:
 
@@ -33,39 +31,6 @@ This function will actually complete every part of the connection process for yo
 
 In this function, we start a server and listen until a client attempts to connect. If it is successful, we return a tuple that has both the address of the listening socket that is still open, and the newly formed data socket to send and receive. After calling this function, send() and recv() are all that you need, aside from calling shutdown() when you are finished.
 
-### void initialize_ssl(void):
-
-This function loads up all of the errors, algorithms and libraries needed in order to start a working OpenSSL SSL/TLS server. You must call this function first before any of the other functions using SSL or else they will not work. Put this at the top of your program, or at least at the top of any of your networking functionality.
-
-### Int secure_send(SSL *ssl, char *message, int size) &
- ### Int secure_recieve(SSL *ssl, char *buffer, int size):
--	*Ssl*: A pointer to the ssl enabled socket we are using for our connection
--	*Message/buffer*: these are the pointers to the strings where our message comes from, and where it will be put into
--	*Size*: the size of the message (in bytes)
-
-These are wrapper functions for sending and receiving SSL data. I made these so that you don’t have to go through the OpenSSL documentation to figure out how to use them. It doesn’t add or take away any of the functionality or sending or receiving, I just put the functions in an easy to understand, simple interface included in my library.
-
-### Void create_authorization(void):
-This is a function to be used with testing or if you want to make self-signed certificates. The requirement is of course that you have OpenSSL’s binary compiled and ready to run. It will make a private key file in the directory your program is kept in called “privkey.pem” and it creates the self-signed certificate as “cacert.pem.” If you are making a full production program, I suggest using the actual OpenSSL program so you can get exactly what you want, as all this does is make a system call to the basic certification listed in OpenSSL’s README file.
-
-
-### Ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_file, 
-char *port):
--	*prikey_file*: This string can be either a relative or absolute path to the SSL private key you have either generated with the function above or on your own with the OpenSSL binary
--	*cert_file*: This string is the relative or absolute path to the certificate (either self-signed or registered with a CA) that belongs to your program. Both of these are used with the new SSL connection to encrypt/decrypt the data, as well as help the client generate their own keys
--	*port*: This is the port that you want to listen on
-
-This is our SSL/TLS equivalent to the connect_to_client() function. In fact, it first calls this function so that they keys and information can be exchanged before we move to secured data transfer. We cast the regular TCP connection into a Secure Socket Layer encryption. This function returns and ssl_tuple of all the information required for secure_send(), secure_recieve() and secure_close().
-
-### Ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port):
--	for this function, the params are the same as the unsecure method’s parameters, with user_port serving the same function as client_port.
-
-Much like its unsecure counterpart, this function will create a connection to the host and port passed in on the user_port you specify. Once this is complete, we cast the port as a Secure Socket Layer connection. We take all of this info and pack it into an ssl_tuple that has all the info you need for secure_send(), secure_recieve() and secure_close().
-
-### Void secure_close(ssl_tuple running_ssl):
--	*running_ssl*: this is the ssl_tuple that was either passed back to you by secure_connect_to_server() or secure_connect_to_client().
-
-This function packages together all of the steps needed to free all of the memory used by our ssl connection. It closes all of our sockets and our stored SSL functions and variables. 
 
 
 
@@ -80,9 +45,25 @@ This function packages together all of the steps needed to free all of the memor
 
 
 
-# Win_Networking.h
 
-This is the Microsoft Windows compatible version of Networking.h. The function calls and structs are mostly the same, except for different imports and windows led interfaces. As far as differences in code, any differences have been listed below:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Basic_Win_Networking.h
+
+This is the Microsoft Windows compatible version of Networking.h. The function calls and structs are mostly the same, except for different imports and windows led interfaces. This is the basic version that does not involve SSL/TLS. As far as differences in code, any differences have been listed below:
 
 ## Functions:
 
