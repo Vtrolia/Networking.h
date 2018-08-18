@@ -82,7 +82,7 @@ This function packages together all of the steps needed to free all of the memor
 
 # Win_Networking.h
 
-This is the Microsoft Windows compatible version of Networking.h. The function calls and structs are mostly the same, except for different imports and windows led interfaces. As far as differences in code, any differences have been listed below:
+This is the Microsoft Windows compatible version of Networking.h. The function calls and structs are mostly the same, except for different imports and windows led interfaces. As far as differences in you need to be concerned about in your code, any differences have been listed below:
 
 ## Functions:
 
