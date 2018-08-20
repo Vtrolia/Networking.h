@@ -266,13 +266,13 @@ void initialize_ssl(void)
 
 
 //  a wrapper for the SSL function, so you don't need to try and find the horrifying OpenSSL documentation
-int secure_send(SSL *ssl, void *message, int size)
+unsigned long secure_send(SSL *ssl, void *message, int size)
 {
     return SSL_write(ssl, message, size);
 }
 
 //  a wrapper for the SSL function, so you don't have to look around and around on Google or Stack Overflow for the answer
-int secure_recieve(SSL *ssl, void *buffer, int size)
+unsigned long secure_recieve(SSL *ssl, void *buffer, int size)
 {
     return SSL_read(ssl, buffer, size);
 }
@@ -445,6 +445,24 @@ void secure_close(ssl_tuple running_ssl, bool close_all)
        OPENSSL_cleanup();
     }
     
+}
+
+
+void generate_SHA256_hash(char *tocrypt, char result[65])
+{
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    
+    SHA256_CTX con;
+    SHA256_Init(&con);
+    SHA256_Update(&con, tocrypt, strlen(tocrypt));
+    
+    SHA256_Final(hash, &con);
+    
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        sprintf(result + (i * 2), "%02x", hash[i]);
+    }
+    result[64] = '\0';
 }
 
 
