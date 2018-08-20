@@ -25,46 +25,81 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
-#include <winsock2.h>
-#include "openssl/ssl.h"
-#include "openssl/bio.h"
-#include "openssl/err.h"
+#include <WinSock2.h>
+#include <winsock.h>
+#include <ws2tcpip.h>
+#include <openssl\ssl.h>
+#include <openssl\bio.h>
+#include <openssl\err.h>
+#include <openssl\applink.c>
+#include <time.h>
+#include <sys/utime.h>
+
 
 //  This is a wrapper object so we can return not only the socket number, but also all of the other host info so that our functions can run
 //  independently of each other.
-typedef struct{
+typedef struct connection{
     int socket;
     struct addrinfo *connectioninfo;
 }
 connection;
 
 //  This is so we can keep track of the listen() connection and the send() receive() connection on the server side
-typedef struct{
+typedef struct tuple{
     int sockaddr;
     int dataaddr;
 }
 tuple;
 
+//  This is for memory management, return the pointers in both functions so we can free them later
+typedef struct ssl_tuple{
+	SSL *ssl_connection;
+	SSL_CTX *ctx;
+	int socket;
+}
+ssl_tuple;
 
-/*
+
+//  This is a function to get a string of the current date and time, a solution I found on Stack Overflow
+char *get_datetime_s(void)
+{
+	//  Solution was found from this stack overflow thread: https://stackoverflow.com/questions/2408976/struct-timeval-to-printable-format
+	//  thanks for the solution, https://stackoverflow.com/users/28169/unwind
+	struct timeval tv;
+	time_t nowtime;
+	struct tm *nowtm;
+	char tmbuf[64], buf[64];
+
+	gettimeofday(&tv, NULL);
+	nowtime = tv.tv_sec;
+	nowtm = localtime(&nowtime);
+	strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+	snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, tv.tv_usec);
+	return buf;
+
+}
+
+
+/**
  *  This is our first networking wrapper function. This takes all of the complicated C socket operations and boils it down to a simple function.
  *  This is the Windows port of the same Unix function, so we have to initiate the winsock library
  *  @params domain: This is the domain name of the server you are trying to connect to, obviously a string.
  *  @params port: A string representing the port you want to connect to.
  *  @returns a special connection wrapper object that holds a socket address and the addrsinfo object of the server you are trying to reach. If <0, there is an error
  */
-connection make_connection(const char *domain, const char *port)
+connection make_connection(char *domain, char *port, char *client_port)
 {
     //  Open up our errors log in case something goes wrong
     FILE *errors = fopen("net_errors.log", "a");
     
     //  we need to create and fill a WSADATA object in order to initialize the winsock library. Once this is complete, everything is the same as the Unix Version
     WSADATA Win_Sock;
-    if (WSAStartup(MAKEWORD(2,2), &Win_sock) != 0)
+    if (WSAStartup(MAKEWORD(2,2), &Win_Sock) != 0)
     {
-        fprintf(errors, "could not load winsock library");
-        exit();
+        fprintf(errors, "%s: could not load winsock library", get_datetime_s());
+        exit(-1);
     }
     
     //  Create our structs to hold our connection info later. Create a class of our wrapper object so that we can return both the socket address and the
@@ -78,7 +113,7 @@ connection make_connection(const char *domain, const char *port)
     int unsigned socketaddr = socket(AF_INET, SOCK_STREAM, 0);
     if (socketaddr == 0)
     {
-        fprintf(errors, "error in creating socket\n");
+        fprintf(errors, "%s: error in creating socket\n", get_datetime_s());
         domain_connection.socket = -2;
         fclose(errors);
         return domain_connection;
@@ -93,7 +128,7 @@ connection make_connection(const char *domain, const char *port)
     //  We try to find tbhe IP address and other info for the host we are trying to connect to and pass it into domain_info, if not, exit the program
     if (getaddrinfo(domain, port, &my_info, &domain_info) != 0)
     {
-        fprintf(errors, "address info not found\n");
+        fprintf(errors, "%s: address info not found\n", get_datetime_s());
         domain_connection.socket = -1;
         fclose(errors);
         return domain_connection;
@@ -115,7 +150,7 @@ connection make_connection(const char *domain, const char *port)
     
     if (bind(socketaddr, (struct sockaddr *) &local, sizeof(local)) != 0)
     {
-        fprintf(errors, "port already in use\n");
+        fprintf(errors, "%s: port already in use\n", get_datetime_s());
         fclose(errors);
         domain_connection.socket = -3;
         return domain_connection;
@@ -131,22 +166,22 @@ connection make_connection(const char *domain, const char *port)
 }
 
 //  This is just a simple wrapper function so that you can use the same function when porting to Windows
-void shutdown(int socket, int status)
+void win_shutdown(int socket, int status)
 {
     WSACleanup();
-    closesocket(socket, status);
+	closesocket(socket);
     return;
 }
 
 
-/*
+/**
  *  This is our function designed for a client to connect to a server. simply creates the connection, doesn't send any data.
  *  @params domain: this is the string of the domain name you want to connect to
  *  @params server_port: a string representing the port that the server application is listening to
  *  @params connection_port: a string representing the port we wish to bind our connection to on our end
  *  @returns: if the connection is established, it returns the address of the socket. If the connection is not established, returns a negative int
  */
-int connect_to_server(const char *domain, char *server_port, char *connection_port)
+int connect_to_server(char *domain, char *server_port, char *connection_port)
 {
     //  open up our log in case of errors
     FILE *errors = fopen("net_errors.log", "a");
@@ -160,7 +195,7 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
     int success = connect(server_data.socket, server_data.connectioninfo->ai_addr, server_data.connectioninfo->ai_addrlen);
     if (success < 0)
     {
-        fprintf(errors, "connection could not be established\n");
+        fprintf(errors, "%s: connection could not be established\n", get_datetime_s());
         printf("%s\n", strerror(errno));
         fclose(errors);
         return success;
@@ -173,7 +208,7 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
 }
 
 
-/*
+/**
  *  This is the function for a server that would like to listen to and connect to a client. Takes in no params b/c we are finding the addr info of our
  *  own computer to send off to the client when they use the function above
  *  @params: port, a string representing the port to be used, can be NULL, then one will be selected for you.
@@ -181,9 +216,10 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
  */
 tuple connect_to_client(char *port)
 {
-    //  same as connect to server, use the port supplied by the user, if not, try all of our ports to find an open one and see if it works.
-    //  The only difference is that the host we are trying to get information is our own. Since we are running a server, the argument for client
-    //  port when we make the connection will be NULL.
+    /*  same as connect to server, use the port supplied by the user, if not, try all of our ports to find an open one and see if it works.
+     *  The only difference is that the host we are trying to get information is our own. Since we are running a server, the argument for client
+     *  port when we make the connection will be NULL.
+	 */
     char str[6];
     connection server_data;
     if (port)
@@ -218,7 +254,7 @@ tuple connect_to_client(char *port)
     
     //  Now, we supply the empty structs to fill with client data and start the connection. Save both our listening socket and the data connection socket
     //  and return that in a tuple
-    unsigned int ad_size = sizeof(struct sockaddr);
+    int ad_size = sizeof(struct sockaddr);
     tuple sn_rec;
     sn_rec.sockaddr = server_data.socket;
     struct sockaddr *client_info = malloc(sizeof(struct sockaddr));
@@ -230,11 +266,9 @@ tuple connect_to_client(char *port)
 //  server using OpenSSL
 void initialize_ssl(void)
 {
-    SSL_load_error_strings();
-    ERR_load_ERR_strings();
+	ERR_load_ERR_strings();
     OpenSSL_add_ssl_algorithms();
     SSL_library_init();
-    
 }
 
 
@@ -251,7 +285,7 @@ int secure_recieve(SSL *ssl, char *buffer, int size)
 }
 
 
-/*
+/**
  *  Here is a function you will use if you want to create your own self-signed certificate in a wrapper. If you are on a Linux distro openssl may
  *  be preinstalled but if you have OSX or Windows you'll have to download it, if you want. I'll make a package that has everything you need if you
  *  want to set up an SSL connection unless you already have it all installed. This is mainly to automate the process and the result is
@@ -265,7 +299,7 @@ void create_authorization(void)
 }
 
 
-/*
+/**
  *  Here we have our function to create a Secure Socket Layer connection with a client. It takes care of everything for you and takes the
  *  complicated and often confusing OpenSSL functions and boils it down to a single function call. Of course, this function assumes
  *  that you have already run initialize_ssl() to start up everything
@@ -285,6 +319,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
     if (!ctx)
     {
         FILE *errors = fopen("net_errors.log", "a");
+		fprintf(errors, "%s: ", get_datetime_s());
         ERR_print_errors_fp(errors);
         fclose(errors);
         free(ctx);
@@ -297,6 +332,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
     if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0)
     {
         FILE *errors = fopen("net_errors.log", "a");
+		fprintf(errors, "%s: ", get_datetime_s());
         ERR_print_errors_fp(errors);
         fclose(errors);
         free(ctx);
@@ -305,6 +341,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
     if (SSL_CTX_use_PrivateKey_file(ctx, prikey_file, SSL_FILETYPE_PEM) <= 0 )
     {
         FILE *errors = fopen("net_errors.log", "a");
+		fprintf(errors, "%s: ", get_datetime_s());
         ERR_print_errors_fp(errors);
         fclose(errors);
         free(ctx);
@@ -316,7 +353,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
     if(unsecure_connection.dataaddr < 0 || unsecure_connection.sockaddr  < 0)
     {
         FILE *errors = fopen("net_errors.log", "a");
-        fprintf(errors, "unable to connect to client\n");
+        fprintf(errors, "%s: unable to connect to client\n", get_datetime_s());
         fclose(errors);
         free(ctx);
         exit(-1);
@@ -330,6 +367,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
     if (SSL_accept(ssl) <= 0)
     {
         FILE *errors = fopen("net_errors.log", "a");
+		fprintf(errors, "%s: ", get_datetime_s());
         ERR_print_errors_fp(errors);
         fclose(errors);
         free(ctx);
@@ -345,7 +383,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
 }
 
 
-/*
+/**
  *  Simple client connection setup for a Secure Socket Client. This is a simple wrapper so that it works exactly the same as the unsecured
  *  connect_to_server. It assumes that you have already run init_ssl()
  *  @params hostname: server you want to connect to
@@ -361,6 +399,7 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
     if (!ctx)
     {
         FILE *errors = fopen("net_errors.log", "a");
+		fprintf(errors, "%s: ", get_datetime_s());
         ERR_print_errors_fp(errors);
         fclose(errors);
         free(ctx);
@@ -376,6 +415,7 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
     if(SSL_connect(ssl) <= 0)
     {
         FILE *errors = fopen("net_errors.log", "a");
+		fprintf(errors, "%s: ", get_datetime_s());
         ERR_print_errors_fp(errors);
         fclose(errors);
         free(ssl);
@@ -393,17 +433,40 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
     
 }
 
-/*
+/**
  *  With this function, we consolidate all of the functions we need to call to end the ssl connection for either the client or server.
  *  the ssl_tuple contains the info for our running ssl connection, and the socket is the id of our data transfer socket (not the listen socket if
  *  you are using this with a server.)
  */
-void secure_close(ssl_tuple running_ssl)
+void secure_close(ssl_tuple running_ssl, bool close_all)
 {
-    shutdown(running_ssl.socket, 2);
+	if (close_all)
+	{
+		win_shutdown(running_ssl.socket, 2);
+	}
     SSL_free(running_ssl.ssl_connection);
     SSL_CTX_free(running_ssl.ctx);
     OPENSSL_cleanup();
+}
+
+
+//	This function will handle all of the interfaces of OpenSSL's SHA functions, tocrypt is the string to encrypt,
+//	and result is where the final hash will end up
+void generate_SHA256_hash(char *tocrypt, char result[65])
+{
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+
+	SHA256_CTX con;
+	SHA256_Init(&con);
+	SHA256_Update(&con, tocrypt, strlen(tocrypt));
+
+	SHA256_Final(hash, &con);
+
+	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+	{
+		sprintf(result + (i * 2), "%02x", hash[i]);
+	}
+	result[64] = '\0';
 }
 
 #endif /* Win_Networking_h */
