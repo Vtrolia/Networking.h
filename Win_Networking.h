@@ -76,24 +76,7 @@ char *get_datetime_s(void)
 		current_time.wHour, current_time.wMinute, current_time.wSeconds, current_time.wMilliseconds);
 
 	return timestr;
-
-}//  This is a function to get a string of the current date and time, a solution I found on Stack Overflow
-char *get_datetime_s(void)
-{
-	//  Solution was found from this stack overflow thread: https://stackoverflow.com/questions/2408976/struct-timeval-to-printable-format
-	//  thanks for the solution, https://stackoverflow.com/users/28169/unwind
-	struct timeval tv;
-	time_t nowtime;
-	struct tm *nowtm;
-	char tmbuf[64], buf[64];
-
-	gettimeofday(&tv, NULL);
-	nowtime = tv.tv_sec;
-	nowtm = localtime(&nowtime);
-	strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-	snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, tv.tv_usec);
-	return buf;
-
+	
 }
 
 
