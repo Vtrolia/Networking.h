@@ -273,13 +273,13 @@ void initialize_ssl(void)
 
 
 //  a wrapper for the SSL function, so you don't need to try and find the horrifying OpenSSL documentation
-int secure_send(SSL *ssl, char *message, int size)
+int secure_send(SSL *ssl, void *message, int size)
 {
     return SSL_write(ssl, message, size);
 }
 
 //  a wrapper for the SSL function, so you don't have to look around and around on Google or Stack Overflow for the answer
-int secure_recieve(SSL *ssl, char *buffer, int size)
+int secure_recieve(SSL *ssl, void *buffer, int size)
 {
     return SSL_read(ssl, buffer, size);
 }
