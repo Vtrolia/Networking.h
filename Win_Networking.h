@@ -62,7 +62,22 @@ typedef struct ssl_tuple{
 ssl_tuple;
 
 
-//  This is a function to get a string of the current date and time, a solution I found on Stack Overflow
+/**
+ *  This function will get the current local time from the Windows API, and then put it into a 64 character long string
+ *  and return it. Takes no args.
+ */
+char *get_datetime_s(void)
+{
+	SYSTEMTIME current_time;
+	GetLocalTime(&current_time);
+	
+	char timestr[64];
+	snprintf(timestr, 64, "%lu-%lu-%lu %lu:%lu:%lu:%lu", current_time.wYear, current_time.wMonth, current_time.wDay,
+		current_time.wHour, current_time.wMinute, current_time.wSeconds, current_time.wMilliseconds);
+
+	return timestr;
+
+}//  This is a function to get a string of the current date and time, a solution I found on Stack Overflow
 char *get_datetime_s(void)
 {
 	//  Solution was found from this stack overflow thread: https://stackoverflow.com/questions/2408976/struct-timeval-to-printable-format
