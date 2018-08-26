@@ -3,7 +3,7 @@
 //  A general purpose network socket library wrapping the neccesary work into 2 simple functions, the Windows Edition.
 //
 //  Created by Vinny on 6/30/18.
-//  Copyright © 2018 VIncent W. Trolia. All rights reserved.
+//  Copyright © 2018 Vincent W. Trolia. All rights reserved.
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
