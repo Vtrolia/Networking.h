@@ -27,6 +27,24 @@ int main(void)
 
 ```
 
+input:
+```
+Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ ./client
+Hello, World! 
+This is an example
+of what you can do with
+the Networking.h library! In
+this library, all you need to do   
+is make a few short function calls and
+then you're off to the races! Feel free to 
+read through and check out what's under the hood!
+I designed this library to be robust and able to support
+complex network programs, but to be simple enough that you 
+don't have to go through pages upon pages of socket documentation!
+Please, give it a try and tell me what you think! I love to get feedback!
+q
+Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ 
+```
 ### Server:
 ```C
 #include "Networking.h"
@@ -50,6 +68,24 @@ int main (void)
     return 0;
     
 }
+```
+output:
+```
+Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ ./server
+Hello, World!
+This is an example
+of what you can do with
+the Networking.h library! In
+this library, all you need to do
+is make a few short function calls and
+then you're off to the races! Feel free to
+read through and check out what's under the hood!
+I designed this library to be robust and able to support
+complex network programs, but to be simple enough that you 
+don't have to go through pages upon pages of socket documentation!
+Please, give it a try and tell me what you think! I love to get feedback!
+q
+Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ 
 ```
 
 ## Structs:
