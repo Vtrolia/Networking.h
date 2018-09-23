@@ -29,7 +29,7 @@ int main(void)
 
 input:
 ```
-Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ ./client
+Vinnys-MacBook-Pro:Network-Program-Directory vinny$ ./client
 Hello, World! 
 This is an example
 of what you can do with
@@ -43,7 +43,7 @@ complex network programs, but to be simple enough that you
 don't have to go through pages upon pages of socket documentation!
 Please, give it a try and tell me what you think! I love to get feedback!
 q
-Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ 
+Vinnys-MacBook-Pro:Network-Program-Directory vinny$ 
 ```
 ### Server:
 ```C
@@ -71,7 +71,7 @@ int main (void)
 ```
 output:
 ```
-Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ ./server
+Vinnys-MacBook-Pro:Network-Program-Directory vinny$ ./server
 Hello, World!
 This is an example
 of what you can do with
@@ -85,7 +85,7 @@ complex network programs, but to be simple enough that you
 don't have to go through pages upon pages of socket documentation!
 Please, give it a try and tell me what you think! I love to get feedback!
 q
-Vinnys-MacBook-Pro:Last Stand Remote Host vinny$ 
+Vinnys-MacBook-Pro:Network-Program-Directory vinny$ 
 ```
 
 ## Structs:
