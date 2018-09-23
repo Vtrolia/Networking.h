@@ -58,6 +58,7 @@ typedef struct ssl_tuple{
 	SSL *ssl_connection;
 	SSL_CTX *ctx;
 	int socket;
+	int listen;
 }
 ssl_tuple;
 
@@ -257,6 +258,7 @@ tuple connect_to_client(char *port)
     sn_rec.sockaddr = server_data.socket;
     struct sockaddr *client_info = malloc(sizeof(struct sockaddr));
     sn_rec.dataaddr = accept(server_data.socket, client_info, &ad_size);
+    free(client_info);
     return sn_rec;
 }
 
@@ -377,6 +379,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
     ssl_tuple server_tuple;
     server_tuple.ctx = ctx;
     server_tuple.ssl_connection = ssl;
+    server_tuple.listen = unsecure_connection.sockaddr;
     return server_tuple;
 }
 
