@@ -2,6 +2,56 @@
 
 A simple library of functions to make network programming in C much easier, now with SSL/TLS Support with OpenSSL! Just make sure you have it installed, as I learned that lesson the hard way. If you don't want to use SSL/TLS or just want a more basic approach, you can go to [the branch without OpenSSL.](https://github.com/Vtrolia/Networking.h/tree/no-SSL-support)
 
+## Example Code:
+
+### Client:
+```C
+#include "Networking.h"
+
+int main(void)
+{
+    initialize_ssl();
+    ssl_tuple server_connection = secure_connect_to_server("127.0.0.1", "7754", "7755");
+    char message[256];
+    
+    do
+    {
+        memset(&message, 0, 256);
+        fgets(message, 255, stdin);
+        secure_send(server_connection.ssl_connection, message, (int) strlen(message));
+    }
+    while (strcmp(message, "quit") != 0);
+    secure_close(server_connection, true);
+    return 0;
+}
+
+```
+
+### Server:
+```C
+#include "Networking.h"
+
+int main (void)
+{
+    initialize_ssl();
+    ssl_tuple connection = secure_connect_to_client("privkey.pem", "cacert.pem", "7754", 1);
+    char mes[256];
+    
+    do
+    {
+        memset(&mes, 0, 256);
+        secure_recieve(connection.ssl_connection, mes, 256);
+        printf("%s", mes);
+    }
+    while (strcmp(mes, "quit") != 0);
+    
+    secure_close(connection, true);
+    shutdown(connection.listen, 2);
+    return 0;
+    
+}
+```
+
 ## Structs:
 
 ### connection: (int socket, addrinfo *connectioninfo)
