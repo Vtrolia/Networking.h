@@ -249,6 +249,7 @@ tuple connect_to_client(char *port)
     sn_rec.sockaddr = server_data.socket;
     struct sockaddr *client_info = malloc(sizeof(struct sockaddr));
     sn_rec.dataaddr = accept(server_data.socket, client_info, &ad_size);
+    free(client_info);
     return sn_rec;
 }
 
