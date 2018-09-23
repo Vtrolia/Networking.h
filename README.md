@@ -20,7 +20,7 @@ int main(void)
         fgets(message, 255, stdin);
         secure_send(server_connection.ssl_connection, message, (int) strlen(message));
     }
-    while (strcmp(message, "quit") != 0);
+    while (message[0] != 'q');
     secure_close(server_connection, true);
     return 0;
 }
@@ -43,7 +43,7 @@ int main (void)
         secure_recieve(connection.ssl_connection, mes, 256);
         printf("%s", mes);
     }
-    while (strcmp(mes, "quit") != 0);
+    while (mes[0] != 'q');
     
     secure_close(connection, true);
     shutdown(connection.listen, 2);
