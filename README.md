@@ -10,8 +10,8 @@ A simple library of functions to make network programming in C much easier, now 
 ### tuple: (int sockaddr, int dataaddr)
 -	This struct is used to keep track of both sockets being used by a server program. The sockaddr is the descriptor of the socket that is listening for new connections, and dataaddr is generated for each new accepted connection. The only time you will run into this struct is when you are running a server.
 
-### ssl_tuple: (SSL *ssl_connection, SSL_CTX *ctx, int socket)
--	Our final struct is one designed for memory clearing once our server or client is ready to close. Ssl_connection is a pointer to the file descriptor of an encrypted OpenSSL connection, and ctx is a pointer to the current SSL context being used. Socket is the descriptor of data transfer socket.
+### ssl_tuple: (SSL *ssl_connection, SSL_CTX *ctx, int socket, int listen)
+-	Our final struct is one designed for memory clearing once our server or client is ready to close. Ssl_connection is a pointer to the file descriptor of an encrypted OpenSSL connection, and ctx is a pointer to the current SSL context being used. Socket is the descriptor of data transfer socket. To add more portability and customizability for those who want to make more complicated applications, I added the listening socketfd to the server's ssl_tuple struct. That way if you want to run multiple clients with fork() or even just have more control over the server process, you are now free to do as such.
 
 ## Functions:
 
