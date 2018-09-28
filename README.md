@@ -101,6 +101,9 @@ Vinnys-MacBook-Pro:Network-Program-Directory vinny$
 
 ## Functions:
 
+### char *get_datetime_s(void):
+This function will get the local date and time for the system from the OS and returns it in a string. It returns the date and time in the format: y-m-d h:m:s. Takes no arguements, and does not use malloc() for the string it returns, so you do not need to worry about using free() with the pointer this returns.
+
 ### connection make_connection( const char *domain, const char *port,  char *client_port):
 -	*Domain*: a string that either holds the ip address or the domain name of the server you wish to connect to
 -	*Port*: This is a string representing the port being used on the server that you wish to connect to
