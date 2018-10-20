@@ -178,8 +178,30 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
     
     //  The implimentation of socket connections in C dictates that the port # of a connection must be a string. Because this is the client
     //  connection call, we need both the port used by the server and the port we wish to use on our end.
-    connection server_data;
-    server_data = make_connection(domain, server_port, connection_port);
+    connection server_data = make_connection(domain, server_port, connection_port);
+    
+    /*  sometimes of the server_data connection has a negative socketfd, it can cause a segfault in this function. For some
+     *  reason I thought that the client connection needed to be the one provided by the parameter connection_port, this is
+     *  obviously not the case, so instead I added the same functionality that we search around until a usable port is found.
+     *  Returns -1 if no port in the entire OS can be found now, so that even if this fails there still is no segfault.
+     */
+    char str[5];
+    if (server_data.socket < 0)
+    {
+        for (int i = 1050; i < 65536; i++)
+        {
+            snprintf(str, 5, "%i", i);
+            server_data = make_connection("127.0.0.1", server_port, str);
+            if (server_data.socket > 0)
+            {
+                break;
+            }
+        }
+        if (server_data.socket < 0)
+        {
+            return -1;
+        }
+    }
     
     //  if we can successfully connect to the server, return the address of the successful connection, else return the error code.
     int success = connect(server_data.socket, server_data.connectioninfo->ai_addr, server_data.connectioninfo->ai_addrlen);
