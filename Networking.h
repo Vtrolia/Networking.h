@@ -191,7 +191,7 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
         for (int i = 1050; i < 65536; i++)
         {
             snprintf(str, 5, "%i", i);
-            server_data = make_connection("127.0.0.1", server_port, str);
+            server_data = make_connection(domain, server_port, str);
             if (server_data.socket > 0)
             {
                 break;
