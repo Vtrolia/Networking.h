@@ -78,7 +78,7 @@ char *get_datetime_s(void)
     nowtime = tv.tv_sec;
     nowtm = localtime(&nowtime);
     strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-    snprintf(buf, sizeof buf, "%s.%06ld", tmbuf, tv.tv_usec);
+    snprintf(buf, sizeof buf, "%s.%06d", tmbuf, tv.tv_usec);
     return buf;
     
 }
@@ -127,7 +127,7 @@ connection make_connection(const char *domain, const char *port, char *client_po
     if (getaddrinfo(domain, port, &my_info, &domain_info) != 0)
     {
         fprintf(errors, "%s: address info not found\n", get_datetime_s());
-        domain_connection.socket = -1;
+        domain_connection.socket = -55;
         fclose(errors);
         return domain_connection;
     }
@@ -180,7 +180,7 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
     //  connection call, we need both the port used by the server and the port we wish to use on our end.
     connection server_data = make_connection(domain, server_port, connection_port);
     
-    /*  sometimes of the server_data connection has a negative socketfd, it can cause a segfault in this function. For some
+    /*  Sometimes of the server_data connection has a negative socketfd, it can cause a segfault in this function. For some
      *  reason I thought that the client connection needed to be the one provided by the parameter connection_port, this is
      *  obviously not the case, so instead I added the same functionality that we search around until a usable port is found.
      *  Returns -1 if no port in the entire OS can be found now, so that even if this fails there still is no segfault.
@@ -363,15 +363,11 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
         exit(-1);
     }
     
-    //  Now we set up our regular data connection
+    //  Now we set up our regular data connection, or we wait until the port is open if it is in use.
     tuple unsecure_connection = connect_to_client(port);
-    if(unsecure_connection.dataaddr < 0 || unsecure_connection.sockaddr  < 0)
+    while (unsecure_connection.dataaddr < 0 || unsecure_connection.sockaddr  < 0)
     {
-        FILE *errors = fopen("net_errors.log", "a");
-        fprintf(errors, "%s: unable to connect to client\n", get_datetime_s());
-        fclose(errors);
-        free(ctx);
-        exit(-1);
+        unsecure_connection = connect_to_client(port);
     }
     
     //  finally, we bind our SSL configuration to the regular socket connection and pass back the connection if all goes well
@@ -410,6 +406,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
 ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
 {
     //  let's get SSL/TLS started in here
+    
     SSL_CTX *ctx;
     ctx = SSL_CTX_new(SSLv23_client_method());
     if (!ctx)
@@ -424,9 +421,15 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
     
     //  similar to setting up an unsecure client, but now we bind it to ssl
     int unsecure_server = connect_to_server(hostname, port, user_port);
+    if (unsecure_server < 0)
+    {
+        ssl_tuple fail;
+        fail.ssl_connection = NULL;
+        return fail;
+    }
+    
     SSL *ssl = SSL_new(ctx);
     SSL_set_fd(ssl, unsecure_server);
-    
     //  connections die when they are killed
     if(SSL_connect(ssl) <= 0)
     {
@@ -460,7 +463,7 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
  */
 void secure_close(ssl_tuple running_ssl, bool close_all)
 {
-    shutdown(running_ssl.socket, 2);
+    shutdown(running_ssl.socket, 0);
     SSL_free(running_ssl.ssl_connection);
     SSL_CTX_free(running_ssl.ctx);
     if (close_all)
