@@ -13,7 +13,7 @@
 //  (that version is cleaner, we can get rid of all those nasty #includes) If I'm smart, it's in the same place as this library. All you have to do         //
 //  once you import this library is run either connect_to_server() or connect_to_client() and you're good to go. This library's job is to set up the        //
 //  connection for you, as setting up send() and receive() is often very dependant on your specific use case, and I don't want to force you to work around  //
-//  my specific way. This software is licensed under Apache 2.0 Open Source License so feel free to use it and make money off of what you make. email me at //
+//  my specific way. This software is licensed under MIT License so feel free to use it and make money off of what you make. email me at //
 //  vtrolia@protonmail.com if you have comments, concerns, questions or suggestions. Now go, enjoy this amazing technology of the future called the         //
 //  Internet" with your own C programs! Now with added SSL support! For this, we use OpenSSL                                                                //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
