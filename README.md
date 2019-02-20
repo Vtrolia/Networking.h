@@ -1,6 +1,6 @@
 # Networking.h
 
-A simple library of functions to make network programming in C much easier, now with SSL/TLS Support with OpenSSL! Just make sure you have it installed, as I learned that lesson the hard way. If you don't want to use SSL/TLS or just want a more basic approach, you can go to [the branch without OpenSSL.](https://github.com/Vtrolia/Networking.h/tree/no-SSL-support)
+A simple library of functions to make network programming in C much easier, now with SSL/TLS Support with OpenSSL! Just make sure you have it installed, as I learned that lesson the hard way. 
 
 ## Example Code:
 
