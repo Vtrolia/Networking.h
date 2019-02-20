@@ -20,22 +20,22 @@
 
 #include "Networking.h"
 
-// This is a function to get a string of the current date and time, a solution I found on Stack Overflow
+// This is a function to get a string of the current date and time
 char *get_datetime_s(void)
 {
-    // Solution was found from this stack overflow thread: https://stackoverflow.com/questions/2408976/struct-timeval-to-printable-format
-    // thanks for the solution, https://stackoverflow.com/users/28169/unwind
-    struct timeval tv;
-    time_t nowtime;
-    struct tm *nowtm;
-    char tmbuf[64], buf[64];
+    // create the strcuts
+    struct timeval time;
+    time_t now;
+    struct tm *now;
+    char timestr[64], buff[64];
     
-    gettimeofday(&tv, NULL);
-    nowtime = tv.tv_sec;
-    nowtm = localtime(&nowtime);
-    strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-    snprintf(buf, sizeof buf, "%s.%06d", tmbuf, tv.tv_usec);
-    return buf;
+    // ask the operating system for the machine's local time, then return it in human-readable form
+    gettimeofday(&time, NULL);
+    now_t = time.tv_sec;
+    now = localtime(&now_t);
+    strftime(timestr, sizeof timestr, "%Y-%m-%d %H:%M:%S", now);
+    snprintf(buff, sizeof buff, "%s.%06d", timestr, time.tv_usec);
+    return buff;
     
 }
 
