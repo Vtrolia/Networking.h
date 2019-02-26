@@ -25,15 +25,15 @@ char *get_datetime_s(void)
 {
     // create the strcuts
     struct timeval time;
+    struct tm *nowtm;
     time_t now;
-    struct tm *now;
     char timestr[64], buff[64];
     
     // ask the operating system for the machine's local time, then return it in human-readable form
     gettimeofday(&time, NULL);
-    now_t = time.tv_sec;
-    now = localtime(&now_t);
-    strftime(timestr, sizeof timestr, "%Y-%m-%d %H:%M:%S", now);
+    now = time.tv_sec;
+    nowtm = localtime(&now);
+    strftime(timestr, sizeof timestr, "%Y-%m-%d %H:%M:%S", nowtm);
     snprintf(buff, sizeof buff, "%s.%06d", timestr, time.tv_usec);
     return buff;
     
