@@ -419,11 +419,11 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
  * @param close_all: This is a Boolean representing whether or not you are completly done with SSL/TLS. If you intend on using multiple connections over
  * SSL/TLS, this should be false because it closes down all SSL/TLS usage.
  */
-void secure_close(ssl_tuple running_ssl, bool close_all)
+void secure_close(ssl_tuple *running_ssl, bool close_all)
 {
-    shutdown(running_ssl.socket, 0);
-    SSL_free(running_ssl.ssl_connection);
-    SSL_CTX_free(running_ssl.ctx);
+    shutdown(running_ssl->socket, 0);
+    SSL_free(running_ssl->ssl_connection);
+    SSL_CTX_free(running_ssl->ctx);
     if (close_all)
     {
        OPENSSL_cleanup();

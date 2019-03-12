@@ -63,7 +63,7 @@ unsigned long secure_recieve(SSL *ssl, void *buffer, int size);
 void create_authorization(void);
 ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_file, char *port);
 ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port);
-void secure_close(ssl_tuple running_ssl, bool close_all);
+void secure_close(ssl_tuple *running_ssl, bool close_all);
 void generate_SHA256_hash(char *tocrypt, char result[65]);
 
 #endif /* networking_h */
