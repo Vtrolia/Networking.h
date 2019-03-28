@@ -11,7 +11,7 @@ A simple library of functions to make network programming in C much easier, now 
 int main(void)
 {
     initialize_ssl();
-    ssl_tuple server_connection = secure_connect_to_server("127.0.0.1", "7754", "7755");
+    ssl_tuple server_connection = secure_connect_to_server("127.0.0.1", 7754, 7755);
     char message[256];
     
     do
@@ -52,7 +52,7 @@ Vinnys-MacBook-Pro:Network-Program-Directory vinny$
 int main (void)
 {
     initialize_ssl();
-    ssl_tuple connection = secure_connect_to_client("privkey.pem", "cacert.pem", "7754", 1);
+    ssl_tuple connection = secure_connect_to_client("privkey.pem", "cacert.pem", 7754);
     char mes[256];
     
     do
@@ -104,21 +104,21 @@ Vinnys-MacBook-Pro:Network-Program-Directory vinny$
 ### char *get_datetime_s(void):
 This function will get the local date and time for the system from the OS and returns it in a string. It returns the date and time in the format: year-month-day hours:minutes:seconds. Takes no arguments, and does not use malloc() for the string it returns, so you do not need to worry about using free() with the pointer this returns.
 
-### connection make_connection( const char *domain, const char *port,  char *client_port):
+### connection make_connection( const char *domain, unsigned int port,  unsigned int client_port):
 -	*Domain*: a string that either holds the ip address or the domain name of the server you wish to connect to
--	*Port*: This is a string representing the port being used on the server that you wish to connect to
--	*Client_port*: another string, this time it represents the port YOU want to use on your local computer. If you are using this for a server application, pass in NULL.
+-	*Port*: This is the port being used on the server that you wish to connect to
+-	*Client_port*: represents the port YOU want to use on your local computer. If you are using this for a server application, pass in 0.
 
 This function will create a socket for you that is ready to be connected to a client or a server and passes you the information you need to connect back in a connection struct. If you want to make custom connecting to client and connecting to server functions, use this. If not, this function’s main purpose is to be used by the higher-level functions when they actually will connect to you to the computer you want or listen for a client to connect. It will create an IPv4 TCP connection.
 
 
-### int connect_to_server(const char *domain, const char *port, char *client_port):
+### int connect_to_server(const char *domain, unsigned int port, unsigned int client_port):
 -	The  parameters for this function are exactly the same as those for make_connection(), scroll up a bit to see for yourself.
 
 This function will actually complete every part of the connection process for you up to the send() and recv() functions are needed. Because send and receive depend heavily on your specific use case, I didn’t want to lock you into only one possible way of sending data. It returns the socketfd of your connection to the server.
 
-### tuple connect_to_client(char *port):
--	*Port*: This string is the port you wish to run your server on, every other part of the equation is simply part of your local host, so we can generate it in the function itself
+### tuple connect_to_client(unsigned int port):
+-	*Port*: The port you wish to run your server on, every other part of the equation is simply part of your local host, so we can generate it in the function itself
 
 In this function, we start a server and listen until a client attempts to connect. If it is successful, we return a tuple that has both the address of the listening socket that is still open, and the newly formed data socket to send and receive. After calling this function, send() and recv() are all that you need, aside from calling shutdown() when you are finished.
 
@@ -139,14 +139,14 @@ This is a function to be used with testing or if you want to make self-signed ce
 
 
 ### ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_file, 
-### char *port):
+### unsigned int port):
 -	*prikey_file*: This string can be either a relative or absolute path to the SSL private key you have either generated with the function above or on your own with the OpenSSL binary
 -	*cert_file*: This string is the relative or absolute path to the certificate (either self-signed or registered with a CA) that belongs to your program. Both of these are used with the new SSL connection to encrypt/decrypt the data, as well as help the client generate their own keys
 -	*port*: This is the port that you want to listen on
 
 This is our SSL/TLS equivalent to the connect_to_client() function. In fact, it first calls this function so that they keys and information can be exchanged before we move to secured data transfer. We cast the regular TCP connection into a Secure Socket Layer encryption. This function returns and ssl_tuple of all the information required for secure_send(), secure_recieve() and secure_close().
 
-### ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port):
+### ssl_tuple secure_connect_to_server(char *hostname, unsigned int port, unsigned int user_port):
 -	for this function, the params are the same as the unsecure method’s parameters, with user_port serving the same function as client_port.
 
 Much like its unsecure counterpart, this function will create a connection to the host and port passed in on the user_port you specify. Once this is complete, we cast the port as a Secure Socket Layer connection. We take all of this info and pack it into an ssl_tuple that has all the info you need for secure_send(), secure_recieve() and secure_close().
