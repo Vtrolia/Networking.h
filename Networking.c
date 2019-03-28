@@ -45,13 +45,13 @@ char *get_datetime_s(void)
  * Check for the Windows version to be released so that for any project you work on, you can always use the same interface and
  * this can be a simple process for those who want to build network based programs.
  * @param domain: This is the domain name of the server you are trying to connect to, obviously a string.
- * @param port: A string representing the port to connect to.
- * @param client_port: an optional string representing the port to bind the connection to. pass NULL in as the value if you are running a
- * server and add a value if you are running a client application.
+ * @param port: A int representing the port to connect to.
+ * @param client_port: an optional integer representing the port to bind the connection to. pass 0 in as the value if you are running a
+ * server.
  * @return domain_connection: a special connection wrapper object that holds a socket address and the addrsinfo object of the server you are
  * trying to reach. If <0, there is an error
  */
-connection make_connection(const char *domain, const char *port, char *client_port)
+connection make_connection(const char *domain, unsigned int port, unsigned int client_port)
 {
     // Open up the errors log in case something goes wrong
     FILE *errors = fopen("net_errors.log", "a");
@@ -59,7 +59,7 @@ connection make_connection(const char *domain, const char *port, char *client_po
     // Create the structs to hold connection info later. Creates a class of the wrapper object so that it returns both the socket address and the
     // connection info to be used later.
     struct addrinfo my_info;
-    struct addrinfo *domain_info;
+    struct addrinfo *domain_info = NULL;
     connection domain_connection;
     
     // The goal is to keep track of the returned socket number if possible in order to establish the connection. This creates a socket that can
@@ -79,10 +79,14 @@ connection make_connection(const char *domain, const char *port, char *client_po
     my_info.ai_socktype = SOCK_STREAM;
     my_info.ai_flags = AI_PASSIVE;
     
+    char portstring[6];
+    sprintf(portstring, "%d", port);
+    
     // Try to find tbhe IP address and other info for the host you are trying to connect to and pass it into domain_info, if not, exit the program
-    if (getaddrinfo(domain, port, &my_info, &domain_info) != 0)
+    if (getaddrinfo(domain, portstring, &my_info, &domain_info) != 0)
     {
         fprintf(errors, "%s: address info not found\n", get_datetime_s());
+        freeaddrinfo(domain_info);
         domain_connection.socket = -55;
         fclose(errors);
         return domain_connection;
@@ -95,19 +99,26 @@ connection make_connection(const char *domain, const char *port, char *client_po
     local.sin_addr.s_addr = INADDR_ANY;
     if (client_port)
     {
-        local.sin_port = htons(atoi(client_port));
+        local.sin_port = htons(client_port);
     }
     else
     {
-        local.sin_port = htons(atoi(port));
+        local.sin_port = htons(port);
     }
     
-    if (bind(socketaddr, (struct sockaddr *) &local, sizeof(local)) != 0)
+    while (bind(socketaddr, (struct sockaddr *) &local, sizeof(local)) != 0)
     {
-        fprintf(errors, "%s: port already in use\n", get_datetime_s());
-        fclose(errors);
-        domain_connection.socket = -3;
-        return domain_connection;
+        // the client can pretty much use any port, but the server will return an error
+        if(client_port)
+        {
+            local.sin_port++;
+        }
+        else
+        {
+            socketaddr = -4;
+            break;
+        }
+        
     }
     
     // If everything else has gone perfectly, populate the wrapper object with the relevant info and return it to be used with either client or server.
@@ -123,11 +134,11 @@ connection make_connection(const char *domain, const char *port, char *client_po
 /**
  * This is the function designed for a client to connect to a server. It simply creates the connection and doesn't send any data.
  * @param domain: this is the string of the domain name to connect to
- * @param server_port: a string representing the port that the server application is listening on
- * @param connection_port: a string representing the port we wish to bind our connection to
+ * @param server_port: an integer representing the port that the server application is listening on
+ * @param connection_port: an integer representing the port we wish to bind our connection to
  * @return: if the connection is established, it returns the address of the socket. If the connection is not established, returns a negative int
  */
-int connect_to_server(const char *domain, char *server_port, char *connection_port)
+int connect_to_server(const char *domain, unsigned int server_port, unsigned int connection_port)
 {
     // open up our log in case of errors
     FILE *errors = fopen("net_errors.log", "a");
@@ -136,31 +147,15 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
     // connection call, it needa both the port used by the server and the port to use on our end.
     connection server_data = make_connection(domain, server_port, connection_port);
     
-    /* Sometimes the server_data connection has a negative socketfd, it can cause a segfault in this function. For some
-     * reason I thought that the client connection needed to be the one provided by the parameter connection_port, this is
-     * obviously not the case, so instead the same function will search around until a usable port is found.
-     * Returns -1 if no port in the entire OS can be found now, so that even if this fails there still is no segfault.
-     */
-    char str[5];
+    // the client connection will try any port until it works, so if it can't find a port, it's time to give up
     if (server_data.socket < 0)
     {
-        for (int i = 1050; i < 65536; i++)
-        {
-            snprintf(str, 5, "%i", i);
-            server_data = make_connection(domain, server_port, str);
-            if (server_data.socket > 0)
-            {
-                break;
-            }
-        }
-        if (server_data.socket < 0)
-        {
-            return -1;
-        }
+        return -1;
     }
     
     // if successfully connected to the server, return the address of the successful connection, else return the error code.
     int success = connect(server_data.socket, server_data.connectioninfo->ai_addr, server_data.connectioninfo->ai_addrlen);
+    freeaddrinfo(server_data.connectioninfo);
     if (success < 0)
     {
         fprintf(errors, "%s: connection could not be established\n", get_datetime_s());
@@ -182,34 +177,37 @@ int connect_to_server(const char *domain, char *server_port, char *connection_po
  * @param: port, a string representing the port to be used, can be NULL, then one will be selected for you.
  * @return sn_rec: a tuple that contains the listen socket and the data transfer socket.
  */
-tuple connect_to_client(char *port)
+tuple connect_to_client(unsigned int port)
 {
     /* same as connect to server, use the port supplied by the user, if not, try all of our ports to find an open one and see if it works.
      * The only difference is that the host you are trying to get information is your own. Since this is running a server, the argument for client
      * port when the connection is made will be NULL.
      */
-    char str[6];
     connection server_data;
     if (port)
     {
-        strcpy(str, port);
-        server_data = make_connection("127.0.0.1", str, NULL);
+        server_data = make_connection("127.0.0.1", port, 0);
     }
     else
     {
+        int random_port = 0;
         for (int i = 1050; i < 65536; i++)
         {
-            snprintf(str, 5, "%i", i);
-            server_data = make_connection("127.0.0.1", str, NULL);
+            freeaddrinfo(server_data.connectioninfo);
+            server_data = make_connection("127.0.0.1", port, 0);
             if (server_data.socket > 0)
             {
+                random_port = i;
                 break;
             }
             
             // if a random port is used, print it out for debugging purposes
-            printf("using port: %s\n", str);
+            printf("using port: %i\n", random_port);
         }
     }
+    
+    // now free regardless of the situation
+    freeaddrinfo(server_data.connectioninfo);
     
     // if for some reason the listening fails, return a negative tuple called failure
     if(listen(server_data.socket, 10) < 0)
@@ -281,7 +279,7 @@ void create_authorization(void)
  * Make sure you use the wrapper secure_send() and secure_recieve() instead of the usual socket sending and recieving functions. Returns both
  * so they can be freed later
  */
-ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_file, char *port)
+ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_file, unsigned int port)
 {
     // Make sure the SSL connection's data can be initialized
     SSL_CTX *ctx;
@@ -360,7 +358,7 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
  * @params user_port: this is the string representation of the port the client end should use
  * @returns: a ssl_tuple containing both the ctx pointer and the pointer to the binded ssl socket
  */
-ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
+ssl_tuple secure_connect_to_server(char *hostname, unsigned int port, unsigned int user_port)
 {
     // let's get SSL/TLS started in here
     SSL_CTX *ctx;
@@ -398,7 +396,7 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
         free(ssl);
         free(ctx);
         exit(-1);
-
+        
     }
     
     // store all pointers and addresses into a tuple so we don't leak memory or leave a connection running forever, unused.
@@ -419,14 +417,15 @@ ssl_tuple secure_connect_to_server(char *hostname, char *port, char *user_port)
  * @param close_all: This is a Boolean representing whether or not you are completly done with SSL/TLS. If you intend on using multiple connections over
  * SSL/TLS, this should be false because it closes down all SSL/TLS usage.
  */
-void secure_close(ssl_tuple *running_ssl, bool close_all)
+void secure_close(ssl_tuple running_ssl, bool close_all)
 {
-    shutdown(running_ssl->socket, 0);
-    SSL_free(running_ssl->ssl_connection);
-    SSL_CTX_free(running_ssl->ctx);
+    shutdown(running_ssl.socket, 0);
+    SSL_free(running_ssl.ssl_connection);
+    
     if (close_all)
     {
-       OPENSSL_cleanup();
+        OPENSSL_cleanup();
+        SSL_CTX_free(running_ssl.ctx);
     }
     
 }
@@ -455,3 +454,5 @@ void generate_SHA256_hash(char *tocrypt, char result[65])
     result[64] = '\0';
 }
 
+
+#endif /* Networking_h */
