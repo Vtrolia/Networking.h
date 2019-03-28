@@ -79,6 +79,7 @@ connection make_connection(const char *domain, unsigned int port, unsigned int c
     my_info.ai_socktype = SOCK_STREAM;
     my_info.ai_flags = AI_PASSIVE;
     
+    // for getaddrinfo needs the string version of the port, so this creates that string
     char portstring[6];
     sprintf(portstring, "%d", port);
     
@@ -143,8 +144,7 @@ int connect_to_server(const char *domain, unsigned int server_port, unsigned int
     // open up our log in case of errors
     FILE *errors = fopen("net_errors.log", "a");
     
-    // The implimentation of socket connections in C dictates that the port # of a connection must be a string. Because this is the client
-    // connection call, it needa both the port used by the server and the port to use on our end.
+    //  Because this is the client connection call, it needs both the port used by the server and the port to use on this end.
     connection server_data = make_connection(domain, server_port, connection_port);
     
     // the client connection will try any port until it works, so if it can't find a port, it's time to give up
@@ -181,7 +181,7 @@ tuple connect_to_client(unsigned int port)
 {
     /* same as connect to server, use the port supplied by the user, if not, try all of our ports to find an open one and see if it works.
      * The only difference is that the host you are trying to get information is your own. Since this is running a server, the argument for client
-     * port when the connection is made will be NULL.
+     * port when the connection is made will be 0.
      */
     connection server_data;
     if (port)
@@ -274,7 +274,7 @@ void create_authorization(void)
  * that initialize_ssl() has already been run to start up everything
  * @param prikey_file: whether you have a CA signed certificate or a self signed, pass the filename of the private key here.
  * @param cert_file: here is the actual filename of the certificate. In order to run an SSL server, a private key AND a certificate are needed
- * @param port: the string representation of the port to use for the server
+ * @param port: the port to use for the server
  * @return: a ssl_tuple that contains a ctx pointer and an SSL pointer that holds the address of a secure socket, be used for sending and recieving later.
  * Make sure you use the wrapper secure_send() and secure_recieve() instead of the usual socket sending and recieving functions. Returns both
  * so they can be freed later
@@ -354,8 +354,8 @@ ssl_tuple secure_connect_to_client(const char *prikey_file, const char *cert_fil
  * Simple client connection setup for a Secure Socket Client. This is a simple wrapper so that it works exactly the same as the unsecured
  * connect_to_server. It assumes that init_ssl() has already been run
  * @params hostname: server you want to connect to
- * @params port: a string representation of the port the server is currently listening on
- * @params user_port: this is the string representation of the port the client end should use
+ * @params port: the port the server is currently listening on
+ * @params user_port: the port the client end should use, but if that port is busy, another port will be found and used
  * @returns: a ssl_tuple containing both the ctx pointer and the pointer to the binded ssl socket
  */
 ssl_tuple secure_connect_to_server(char *hostname, unsigned int port, unsigned int user_port)
